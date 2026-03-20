@@ -1,0 +1,177 @@
+{
+  "evaluation_time": "2026-03-20 11:25:54",
+  "num_tasks": 8,
+  "stages": {
+    "base": {
+      "task_completion_rate": 0.0,
+      "avg_quality_score": 0.32,
+      "avg_tool_accuracy": 0.0,
+      "avg_reasoning_efficiency": 0.0,
+      "avg_generation_time": 0.5,
+      "by_category": {
+        "weather": {
+          "task_completion_rate": 0.0,
+          "avg_quality_score": 0.32,
+          "avg_tool_accuracy": 0.0,
+          "count": 2
+        },
+        "file_operation": {
+          "task_completion_rate": 0.0,
+          "avg_quality_score": 0.32,
+          "avg_tool_accuracy": 0.0,
+          "count": 1
+        },
+        "search_and_summarize": {
+          "task_completion_rate": 0.0,
+          "avg_quality_score": 0.32,
+          "avg_tool_accuracy": 0.0,
+          "count": 2
+        },
+        "multi_step": {
+          "task_completion_rate": 0.0,
+          "avg_quality_score": 0.32,
+          "avg_tool_accuracy": 0.0,
+          "count": 1
+        },
+        "math": {
+          "task_completion_rate": 0.0,
+          "avg_quality_score": 0.32,
+          "avg_tool_accuracy": 0.0,
+          "count": 2
+        }
+      }
+    },
+    "sft": {
+      "task_completion_rate": 1.0,
+      "avg_quality_score": 0.7866666666666667,
+      "avg_tool_accuracy": 0.9375,
+      "avg_reasoning_efficiency": 0.9166666666666666,
+      "avg_generation_time": 0.5,
+      "by_category": {
+        "weather": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.6933333333333334,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        },
+        "file_operation": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.8600000000000001,
+          "avg_tool_accuracy": 1.0,
+          "count": 1
+        },
+        "search_and_summarize": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.8,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        },
+        "multi_step": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.7266666666666666,
+          "avg_tool_accuracy": 0.5,
+          "count": 1
+        },
+        "math": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.8600000000000001,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        }
+      }
+    },
+    "dpo": {
+      "task_completion_rate": 1.0,
+      "avg_quality_score": 0.9416666666666667,
+      "avg_tool_accuracy": 1.0,
+      "avg_reasoning_efficiency": 1.0,
+      "avg_generation_time": 0.5,
+      "by_category": {
+        "weather": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.9,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        },
+        "file_operation": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 1.0,
+          "avg_tool_accuracy": 1.0,
+          "count": 1
+        },
+        "search_and_summarize": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 0.8666666666666667,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        },
+        "multi_step": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 1.0,
+          "avg_tool_accuracy": 1.0,
+          "count": 1
+        },
+        "math": {
+          "task_completion_rate": 1.0,
+          "avg_quality_score": 1.0,
+          "avg_tool_accuracy": 1.0,
+          "count": 2
+        }
+      }
+    }
+  },
+  "comparison": {
+    "base_vs_sft": {
+      "task_completion_rate": {
+        "previous": 0.0,
+        "current": 1.0,
+        "delta": 1.0,
+        "improvement": "+100.0%"
+      },
+      "avg_quality_score": {
+        "previous": 0.32,
+        "current": 0.7866666666666667,
+        "delta": 0.46666666666666673,
+        "improvement": "+46.7%"
+      },
+      "avg_tool_accuracy": {
+        "previous": 0.0,
+        "current": 0.9375,
+        "delta": 0.9375,
+        "improvement": "+93.8%"
+      },
+      "avg_reasoning_efficiency": {
+        "previous": 0.0,
+        "current": 0.9166666666666666,
+        "delta": 0.9166666666666666,
+        "improvement": "+91.7%"
+      }
+    },
+    "sft_vs_dpo": {
+      "task_completion_rate": {
+        "previous": 1.0,
+        "current": 1.0,
+        "delta": 0.0,
+        "improvement": "+0.0%"
+      },
+      "avg_quality_score": {
+        "previous": 0.7866666666666667,
+        "current": 0.9416666666666667,
+        "delta": 0.15499999999999992,
+        "improvement": "+15.5%"
+      },
+      "avg_tool_accuracy": {
+        "previous": 0.9375,
+        "current": 1.0,
+        "delta": 0.0625,
+        "improvement": "+6.2%"
+      },
+      "avg_reasoning_efficiency": {
+        "previous": 0.9166666666666666,
+        "current": 1.0,
+        "delta": 0.08333333333333337,
+        "improvement": "+8.3%"
+      }
+    }
+  }
+}
