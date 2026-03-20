@@ -14,6 +14,20 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # 用户进度保存路径
 PROGRESS_FILE = PROJECT_ROOT / "experiments" / "user_progress.json"
 
+# 阶段定义（颜色和元数据）
+PHASES = [
+    {"name": "打地基", "icon": "🧱", "color": "#1976d2", "bg": "#e3f2fd", "days": [1, 2, 3],
+     "summary": "从零学会搭建和训练模型，打好深度学习基础"},
+    {"name": "学调教", "icon": "🎯", "color": "#388e3c", "bg": "#e8f5e9", "days": [4, 5],
+     "summary": "用数据教模型做事，掌握监督微调和数据工程"},
+    {"name": "懂对齐", "icon": "⚖️", "color": "#f57c00", "bg": "#fff3e0", "days": [6, 7, 8],
+     "summary": "让模型分清好坏，理解偏好对齐技术"},
+    {"name": "玩强化", "icon": "🎮", "color": "#c62828", "bg": "#fce4ec", "days": [9, 10, 11, 12],
+     "summary": "用强化学习让模型自己变强，训练智能 Agent"},
+    {"name": "大融合", "icon": "🏆", "color": "#6a1b9a", "bg": "#f3e5f5", "days": [13, 14],
+     "summary": "端到端完成一个 Agent 模型的全流程训练"},
+]
+
 # 14 天课程大纲
 CURRICULUM = [
     {
@@ -172,6 +186,14 @@ def _save_progress(progress: dict) -> None:
         json.dump(progress, f, ensure_ascii=False, indent=2)
 
 
+def _get_phase_for_day(day_num: int) -> dict:
+    """根据天数获取所属阶段信息。"""
+    for phase in PHASES:
+        if day_num in phase["days"]:
+            return phase
+    return PHASES[0]
+
+
 def render():
     """渲染知识地图页面。"""
     st.header("🗺️ 知识地图")
@@ -193,20 +215,76 @@ def render():
     st.progress(pct, text=f"总体进度：{completed}/{total_concepts} 概念已掌握 ({pct:.0%})")
 
     # ------------------------------------------------------------------
-    # 进度条网格
+    # 阶段式进度可视化
     # ------------------------------------------------------------------
-    cols = st.columns(7)
-    for i, day_info in enumerate(CURRICULUM):
-        day_num = day_info["day"]
-        day_completed = sum(
-            1 for c in day_info["concepts"]
-            if progress["completed_concepts"].get(f"day{day_num}_{c}", False)
+    st.markdown("#### 学习路线")
+
+    for phase in PHASES:
+        phase_days = [d for d in CURRICULUM if d["day"] in phase["days"]]
+        phase_total = sum(len(d["concepts"]) for d in phase_days)
+        phase_done = sum(
+            1 for d in phase_days for c in d["concepts"]
+            if progress["completed_concepts"].get(f"day{d['day']}_{c}", False)
         )
-        day_total = len(day_info["concepts"])
-        with cols[i % 7]:
-            ratio = day_completed / day_total if day_total else 0
-            color = "🟢" if ratio == 1 else ("🟡" if ratio > 0 else "⚪")
-            st.markdown(f"{color} **Day {day_num}**  \n{day_completed}/{day_total}")
+        phase_pct = phase_done / phase_total if phase_total else 0
+
+        # Build day status badges
+        day_badges = ""
+        for d in phase_days:
+            day_num = d["day"]
+            day_done = sum(
+                1 for c in d["concepts"]
+                if progress["completed_concepts"].get(f"day{day_num}_{c}", False)
+            )
+            day_total = len(d["concepts"])
+            ratio = day_done / day_total if day_total else 0
+            if ratio == 1:
+                badge_bg = "#4caf50"
+                badge_text = "white"
+                badge_icon = "✓"
+            elif ratio > 0:
+                badge_bg = "#ff9800"
+                badge_text = "white"
+                badge_icon = f"{day_done}/{day_total}"
+            else:
+                badge_bg = "#e0e0e0"
+                badge_text = "#999"
+                badge_icon = f"0/{day_total}"
+            day_badges += (
+                f'<span style="display:inline-block; padding:4px 10px; margin:2px 4px; '
+                f'border-radius:16px; background:{badge_bg}; color:{badge_text}; '
+                f'font-size:12px; font-weight:500;">'
+                f'D{day_num} {badge_icon}</span>'
+            )
+
+        # Progress bar width
+        bar_width = max(phase_pct * 100, 2)
+        status_emoji = "✅" if phase_pct == 1 else ("🔨" if phase_pct > 0 else "⏳")
+
+        st.markdown(f"""
+        <div style="padding:12px 16px; margin:8px 0; border-radius:10px;
+                    background:{phase['bg']}; border-left:4px solid {phase['color']};">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="font-size:20px;">{phase['icon']}</span>
+                    <span style="font-weight:bold; font-size:15px; color:{phase['color']};">
+                        {phase['name']}
+                    </span>
+                    <span style="font-size:12px; color:#888; margin-left:8px;">
+                        {phase['summary']}
+                    </span>
+                </div>
+                <div style="font-size:13px;">
+                    {status_emoji} {phase_done}/{phase_total}
+                </div>
+            </div>
+            <div style="margin:8px 0 4px 0; background:#00000011; border-radius:4px; height:6px;">
+                <div style="width:{bar_width}%; background:{phase['color']}; height:6px;
+                            border-radius:4px; transition:width 0.3s;"></div>
+            </div>
+            <div style="margin-top:6px;">{day_badges}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
 
@@ -221,8 +299,21 @@ def render():
 
     day_info = CURRICULUM[selected_day - 1]
     day_key = f"day{day_info['day']}"
+    phase = _get_phase_for_day(day_info["day"])
 
-    st.subheader(f"Day {day_info['day']}：{day_info['title']}")
+    # Phase-colored header
+    st.markdown(f"""
+    <div style="padding:12px 16px; border-radius:8px; background:{phase['bg']};
+                border-left:4px solid {phase['color']}; margin-bottom:16px;">
+        <span style="font-size:22px;">{phase['icon']}</span>
+        <span style="font-weight:bold; font-size:18px; color:{phase['color']};">
+            Day {day_info['day']}：{day_info['title']}
+        </span>
+        <span style="font-size:13px; color:#888; margin-left:12px;">
+            {phase['name']}
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
     # 目录检查
     folder_path = PROJECT_ROOT / day_info["folder"]
@@ -231,8 +322,13 @@ def render():
     else:
         st.caption(f"📁 目录 `{day_info['folder']}/` 尚未创建")
 
-    # 概念清单
-    st.markdown("#### 关键概念")
+    # 概念清单 with progress indicator
+    day_concepts_total = len(day_info["concepts"])
+    day_concepts_done = sum(
+        1 for c in day_info["concepts"]
+        if progress["completed_concepts"].get(f"{day_key}_{c}", False)
+    )
+    st.markdown(f"#### 关键概念 ({day_concepts_done}/{day_concepts_total})")
     changed = False
     for concept in day_info["concepts"]:
         key = f"{day_key}_{concept}"
@@ -245,9 +341,11 @@ def render():
     # 验证问题
     st.markdown("#### 验证问题")
     for qi, question in enumerate(day_info["quiz"]):
-        st.markdown(f"**Q{qi+1}:** {question}")
         answer_key = f"{day_key}_q{qi}"
         existing_answer = progress["quiz_answers"].get(answer_key, "")
+        has_answer = bool(existing_answer.strip())
+        status = "✅" if has_answer else "💭"
+        st.markdown(f"{status} **Q{qi+1}:** {question}")
         answer = st.text_area(
             f"你的回答", value=existing_answer, key=f"ans_{answer_key}", height=80,
             label_visibility="collapsed",

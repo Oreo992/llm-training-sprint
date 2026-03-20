@@ -38,11 +38,42 @@ def _render_overview():
     experiments_dir = PROJECT_ROOT / "experiments"
     exp_names = ExperimentTracker.list_experiments(str(experiments_dir))
 
-    # 状态统计
-    col1, col2, col3 = st.columns(3)
-    col1.metric("实验总数", len(exp_names))
+    # ------------------------------------------------------------------
+    # 训练 Pipeline 可视化
+    # ------------------------------------------------------------------
+    st.subheader("训练流程全景")
+    st.markdown("""
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+                padding: 20px; background: linear-gradient(135deg, #667eea11, #764ba211); border-radius: 12px; margin-bottom: 20px;">
+        <div style="text-align:center; padding:16px 20px; background:#e3f2fd; border-radius:10px; min-width:130px; border-left:4px solid #1976d2;">
+            <div style="font-size:28px;">📚</div>
+            <div style="font-weight:bold; color:#1976d2;">预训练</div>
+            <div style="font-size:12px; color:#666;">读万卷书<br/>学知识</div>
+        </div>
+        <div style="font-size:24px; color:#999;">➜</div>
+        <div style="text-align:center; padding:16px 20px; background:#e8f5e9; border-radius:10px; min-width:130px; border-left:4px solid #388e3c;">
+            <div style="font-size:28px;">🎓</div>
+            <div style="font-weight:bold; color:#388e3c;">SFT 微调</div>
+            <div style="font-size:12px; color:#666;">师傅带徒<br/>学格式</div>
+        </div>
+        <div style="font-size:24px; color:#999;">➜</div>
+        <div style="text-align:center; padding:16px 20px; background:#fff3e0; border-radius:10px; min-width:130px; border-left:4px solid #f57c00;">
+            <div style="font-size:28px;">⚖️</div>
+            <div style="font-weight:bold; color:#f57c00;">偏好对齐</div>
+            <div style="font-size:12px; color:#666;">学规矩<br/>知好坏</div>
+        </div>
+        <div style="font-size:24px; color:#999;">➜</div>
+        <div style="text-align:center; padding:16px 20px; background:#fce4ec; border-radius:10px; min-width:130px; border-left:4px solid #c62828;">
+            <div style="font-size:28px;">🚀</div>
+            <div style="font-weight:bold; color:#c62828;">RL 强化</div>
+            <div style="font-size:12px; color:#666;">实战成长<br/>越来越强</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # 课程目录状态
+    # ------------------------------------------------------------------
+    # 状态统计卡片
+    # ------------------------------------------------------------------
     day_folders = [
         "day01_pytorch_basics", "day02_nanoGPT", "day03_huggingface",
         "day04_sft", "day05_data_engineering", "day06_rlhf_concepts",
@@ -50,25 +81,83 @@ def _render_overview():
         "day10_grpo", "day11_12_agent_rl", "day13_14_final_project",
     ]
     existing = sum(1 for f in day_folders if (PROJECT_ROOT / f).exists())
-    col2.metric("已创建课程目录", f"{existing}/{len(day_folders)}")
-    col3.metric("训练阶段", "Base -> SFT -> DPO -> RL")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("实验总数", len(exp_names))
+    col2.metric("课程目录", f"{existing}/{len(day_folders)}")
+    col3.metric("训练阶段", "4 个阶段")
+    col4.metric("总天数", "14 天")
 
     st.divider()
 
+    # ------------------------------------------------------------------
+    # 课程阶段进度
+    # ------------------------------------------------------------------
+    st.subheader("课程阶段")
+    phases = [
+        {"name": "阶段 1：打地基", "icon": "🧱", "days": "Day 1-3", "color": "#1976d2",
+         "desc": "PyTorch → nanoGPT → HuggingFace", "folders": day_folders[:3]},
+        {"name": "阶段 2：学调教", "icon": "🎯", "days": "Day 4-5", "color": "#388e3c",
+         "desc": "SFT 监督微调 → 数据质量实验", "folders": day_folders[3:5]},
+        {"name": "阶段 3：懂对齐", "icon": "⚖️", "days": "Day 6-8", "color": "#f57c00",
+         "desc": "RLHF → DPO → 对齐全景", "folders": day_folders[5:8]},
+        {"name": "阶段 4：玩强化", "icon": "🎮", "days": "Day 9-12", "color": "#c62828",
+         "desc": "RL 基础 → GRPO → AgentRL", "folders": day_folders[8:10] + [day_folders[10]]},
+        {"name": "阶段 5：大融合", "icon": "🏆", "days": "Day 13-14", "color": "#6a1b9a",
+         "desc": "端到端 Agent 训练", "folders": [day_folders[11]]},
+    ]
+
+    phase_cols = st.columns(len(phases))
+    for i, phase in enumerate(phases):
+        with phase_cols[i]:
+            done = sum(1 for f in phase["folders"] if (PROJECT_ROOT / f).exists())
+            total = len(phase["folders"])
+            pct = done / total if total else 0
+            status = "✅" if pct == 1 else ("🔨" if pct > 0 else "⏳")
+            st.markdown(f"""
+            <div style="text-align:center; padding:12px; border-radius:10px;
+                        background: {phase['color']}11; border-top: 3px solid {phase['color']};">
+                <div style="font-size:24px;">{phase['icon']}</div>
+                <div style="font-weight:bold; font-size:13px;">{phase['name']}</div>
+                <div style="font-size:11px; color:#888;">{phase['days']}</div>
+                <div style="font-size:11px; margin-top:4px;">{phase['desc']}</div>
+                <div style="margin-top:6px;">{status} {done}/{total}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # ------------------------------------------------------------------
     # 实验列表
+    # ------------------------------------------------------------------
     if exp_names:
         st.subheader("已记录的实验")
         for name in exp_names:
             t = ExperimentTracker.load_experiment(name, str(experiments_dir))
             s = t.summary()
-            with st.expander(f"实验: {name}"):
+            # Determine stage icon based on experiment name
+            icon = "🧪"
+            if "sft" in name.lower():
+                icon = "🎓"
+            elif "dpo" in name.lower():
+                icon = "⚖️"
+            elif "rl" in name.lower():
+                icon = "🚀"
+            with st.expander(f"{icon} 实验: {name}"):
                 info_cols = st.columns(4)
                 idx = 0
                 for k, v in s.items():
                     if k == "experiment_name" or not isinstance(v, dict):
                         continue
                     with info_cols[idx % 4]:
-                        st.metric(k, f"{v['latest']:.4f}")
+                        latest = v['latest']
+                        # Show delta from max for loss (lower is better)
+                        if "loss" in k:
+                            delta = latest - v['max']
+                            st.metric(k, f"{latest:.4f}", delta=f"{delta:.4f}", delta_color="inverse")
+                        else:
+                            delta = latest - v['min']
+                            st.metric(k, f"{latest:.4f}", delta=f"{delta:.4f}")
                     idx += 1
     else:
         st.info("暂无实验数据。请前往「训练监控」页面生成演示数据，或运行训练脚本。")

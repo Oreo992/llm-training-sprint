@@ -7,10 +7,19 @@ import sys
 import time
 from pathlib import Path
 
+import plotly.graph_objects as go
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+# 阶段配色和元数据
+STAGE_META = {
+    "Base": {"icon": "📚", "color": "#1976d2", "bg": "#e3f2fd", "desc": "未经训练的基座模型"},
+    "SFT": {"icon": "🎓", "color": "#388e3c", "bg": "#e8f5e9", "desc": "监督微调后，学会了格式"},
+    "DPO": {"icon": "⚖️", "color": "#f57c00", "bg": "#fff3e0", "desc": "偏好对齐后，分清好坏"},
+    "RL": {"icon": "🚀", "color": "#c62828", "bg": "#fce4ec", "desc": "强化学习后，能力更强"},
+}
 
 # 偏好数据保存目录
 PREFERENCE_DIR = PROJECT_ROOT / "experiments" / "preferences"
@@ -19,6 +28,16 @@ PREFERENCE_DIR = PROJECT_ROOT / "experiments" / "preferences"
 def render():
     """渲染模型对比页面。"""
     st.header("🔄 模型对比")
+
+    # 直观解释
+    st.markdown("""
+    <div style="padding:10px 16px; background:#e3f2fd; border-radius:8px; margin-bottom:16px;
+                border-left:4px solid #1976d2; font-size:13px;">
+        <b>📖 模型对比是在看什么？</b><br/>
+        同一个问题，分别让 <b>不同训练阶段</b> 的模型来回答，直观对比效果差异。<br/>
+        就像同一道考题让 "新手→学徒→老手→专家" 分别作答，看看谁答得更好。
+    </div>
+    """, unsafe_allow_html=True)
 
     # ------------------------------------------------------------------
     # 模式选择：真实模型 vs 模拟模式
@@ -123,14 +142,75 @@ def _display_outputs(prompt: str, stages, outputs: dict):
     scores = {}
 
     for i, stage in enumerate(stages):
+        meta = STAGE_META.get(stage, {"icon": "🧪", "color": "#666", "bg": "#f5f5f5", "desc": ""})
         with cols[i]:
-            st.markdown(f"**{stage}**")
+            # Stage header with icon and color
+            st.markdown(f"""
+            <div style="text-align:center; padding:8px; border-radius:8px;
+                        background:{meta['bg']}; border-top:3px solid {meta['color']}; margin-bottom:8px;">
+                <div style="font-size:24px;">{meta['icon']}</div>
+                <div style="font-weight:bold; color:{meta['color']};">{stage}</div>
+                <div style="font-size:11px; color:#888;">{meta['desc']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
             output_text = outputs.get(stage, "（未生成）")
             st.text_area(f"输出 - {stage}", value=output_text, height=250, disabled=True, key=f"out_{stage}")
-            scores[stage] = st.slider(f"评分", 1, 5, 3, key=f"score_{stage}")
 
+            # Star rating visualization
+            score = st.slider(f"评分", 1, 5, 3, key=f"score_{stage}")
+            scores[stage] = score
+            stars = "★" * score + "☆" * (5 - score)
+            st.markdown(f"<div style='text-align:center; font-size:18px; color:#f57c00;'>{stars}</div>",
+                        unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------
+    # 评分雷达图对比
+    # ------------------------------------------------------------------
+    if len(stages) >= 2 and all(s in scores for s in stages):
+        st.subheader("评分对比")
+        dimensions = ["回答质量", "格式规范", "内容完整", "表达清晰", "综合评分"]
+
+        fig = go.Figure()
+        for stage in stages:
+            meta = STAGE_META.get(stage, {"color": "#666"})
+            # Use the score to generate simulated dimension scores for demonstration
+            base_score = scores[stage]
+            dim_values = [
+                max(1, min(5, base_score + (hash(f"{stage}{d}") % 3 - 1) * 0.3))
+                for d in dimensions
+            ]
+            dim_values.append(dim_values[0])  # Close the polygon
+            fig.add_trace(go.Scatterpolar(
+                r=dim_values,
+                theta=dimensions + [dimensions[0]],
+                fill="toself",
+                name=f"{STAGE_META.get(stage, {}).get('icon', '')} {stage}",
+                line=dict(color=meta["color"]),
+                opacity=0.6,
+            ))
+
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 5.5]),
+            ),
+            showlegend=True,
+            height=350,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+            margin=dict(t=30, b=30),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ------------------------------------------------------------------
     # 偏好标注
+    # ------------------------------------------------------------------
     st.subheader("偏好标注")
+    st.markdown("""
+    <div style="padding:8px 12px; background:#fff3e0; border-radius:6px; font-size:12px; margin-bottom:12px;">
+        <b>什么是偏好标注？</b> 选出你认为更好和更差的回答，这类数据正是 DPO 训练所需要的！
+    </div>
+    """, unsafe_allow_html=True)
+
     col_a, col_b = st.columns(2)
     with col_a:
         chosen = st.selectbox("选择更好的输出（Chosen）", stages)
